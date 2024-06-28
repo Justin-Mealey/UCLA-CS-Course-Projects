@@ -1,0 +1,104 @@
+Getting started:
+
+    To begin, I ran an scp command to move the tarball to Seasnet.
+    scp randall-git.tgz mealey@lnxsrv13.seas.ucla.edu worked
+
+    tar -xvzf randall-git.tar.gz  unpacked this tarball, showing me the output files
+    The output files were all inside the hidden .git folder
+
+    running git reset --hard gave me access to the files I needed in the repository
+
+    I then moved extra files outside of my git repository, so running ls -a in my local private repo gave:
+    .  ..  COPYING  .git  .gitignore  Makefile  notes.txt  randall.c
+
+    I added notes.txt to the index and was ready to begin.
+
+    Committed changes
+
+Test script and Makefile:
+
+    In Makefile, I added a target called check that calls my test script test.sh
+    Now, I needed to actually write test.sh and add this file to git control with git add test.sh
+
+    My test.sh gives a random number 1-100000 to randall, and checks that the output length is that many bytes by using wc -c
+    I had to use the make command to make randall.c an executable, and then make check to call my test script
+
+    Committed changes
+
+Splitting Files:
+
+    Realizing this notes.txt file would get very convoluted, I improved its organization.
+    Next, I created the 8 new files and began adding the correct includes.
+
+    This is how I split the files: (each .c file includes the corresponding .h)
+        options .c and .h are empty
+        output .c and .h has writebytes, .h includes stdbool, stdio, and limits
+        the hardware and software files include the corresponding implementations
+        randall.c only has main, including the 4 header files I made and errno
+        Makefile's randall now depends on and compiles all c files, not just randall.c
+    I also removed static keyword from functions
+
+    After making these changes I tested that it worked using make and make check
+    Committed changes
+
+Implementing Options:
+
+    Summary of changes to each file are below:
+    Created lrand48.c and .h to handle lrand48 computation
+        This happens by seeding and running mrand48 instead, getting the first and last 32 bits and combining into 64 bits
+    output, hardware and software files unchanged (except that sw handles file)
+    options.c and .h have many changes including:
+        argparse function that checks and gets the arguments
+        getter functions so randall.c can see what the I/O arguments were
+    randall.c now does the following:
+        get the arguments from options.c
+        set initialize, rand64 and finalize based on arguments
+        call appropriate random byte generator we just set
+        handle output based on argument found in options.c
+    test.sh has 6 new tests for the various options
+    Committed changes
+
+Timing:
+    time dd if=/dev/urandom ibs=8192 obs=8192 count=16384 >/dev/null output:
+        real    0m0.935s
+        user    0m0.017s
+        sys     0m0.899s
+    time ./randall 133562368 >/dev/null output:
+        real    0m4.218s
+        user    0m3.753s
+        sys     0m0.261s
+    time ./randall 133562368 | cat >/dev/null output:
+        real    0m4.104s
+        user    0m3.966s
+        sys     0m0.258s
+    time ./randall 133562368 >rand.data output:
+        real    0m4.116s
+        user    0m3.866s
+        sys     0m0.193s
+    time ./randall 10000000 -i /dev/urandom >/dev/null output:
+        real  0m7.290s
+        user  0m0.214s
+        sys   0m4.986s
+    time ./randall 10000000 -i rdrand >/dev/null output:
+        real  0m0.312s
+        user  0m0.303s
+        sys   0m0.008s
+    time ./randall 10000000 -i lrand48_r >/dev/null output:
+        real  0m0.130s
+        user  0m0.119s
+        sys   0m0.011s
+    time ./randall 10000000 -o 5 >/dev/null ouput:
+        real  0m2.965s
+        user  0m2.361s
+        sys   0m0.561s
+    time ./randall 10000000 -o 5000 >/dev/null output:
+        real  0m1.666s
+        user  0m1.637s
+        sys   0m0.009s
+    time ./randall 10000000 -o stdio >/dev/null output:
+        real  0m0.309s
+        user  0m0.301s
+        sys   0m0.008s
+    Committed changes
+
+Fixed Makefile to work for submission, final commit.
