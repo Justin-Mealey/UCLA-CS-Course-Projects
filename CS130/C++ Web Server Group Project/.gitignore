@@ -1,0 +1,22 @@
+.DS_Store
+.vscode
+build
+build_*
+mirror
+bootup.sh
+*.log
+log/
+Testing/
+storage/
+
+# Python artifacts
+
+.venv
+__pycache__
+*.pyc
+*.pyo
+
+# Logs
+logs/
+log/
+*.log
